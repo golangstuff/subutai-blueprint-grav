@@ -61,6 +61,13 @@
         name: rewrite
         state: present
 
+    - name: Allow .htaccess
+      lineinfile:
+        dest: /etc/apache2/apache2.conf
+        regexp: "AllowOverride None"
+        line: "AllowOverride All"
+        state: present
+
     - name: Restart apache
       service: 
         name: apache2
