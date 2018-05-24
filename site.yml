@@ -1,0 +1,69 @@
+# Ansible Playbook for Subutai Nextcloud blueprint
+---
+
+- hosts: all
+  gather_facts: false
+  remote_user: root
+  tasks: 
+
+    - name: Update
+      raw: apt-get -y --allow-unauthenticated update || true
+
+    - name: Ensure python is available
+      raw: test -e /usr/bin/python || apt install -y --allow-unauthenticated python-minimal
+
+    - name: Ensure python-apt is available
+      raw: test -d /usr/share/python-apt || apt install -y --allow-unauthenticated python-apt
+
+    - name: Upgrade
+      raw: apt-get -y --allow-unauthenticated upgrade
+
+- hosts: nc
+  remote_user: root
+  tasks: 
+
+    - name: Install required debs
+      apt: 
+        name: "{{ item }}"
+        state: present
+        allow_unauthenticated: yes
+      with_items: 
+        - php7.0
+        - php7.0-mbstring
+        - php7.0-zip
+        - php7.0-xml
+        - php7.0-mbstring
+        - php7.0-gd
+        - php7.0-curl
+        - apache2
+        - libapache2-mod-php7.0
+        - unzip 
+
+    - name: Download and unzip nextcloud
+      unarchive: 
+        src: "https://github.com/getgrav/grav/releases/download/1.4.5/grav-admin-v1.4.5.zip"
+        dest: "/tmp"
+        remote_src: yes
+        validate_certs: no
+
+    - name: Move files
+      command: bash -c "mv /tmp/grav-admin/* /var/www/html/"
+
+    - name: Change file ownership
+      file: 
+        path: /var/www/html
+        recurse: yes
+        owner: www-data
+        group: www-data
+
+    - name: Enable mod_rewrite
+      apache2_module:
+        name: rewrite
+        state: present
+
+    - name: Restart apache
+      service: 
+        name: apache2
+        state: restarted
+        
+# vim: ts=2 et nowrap autoindent
