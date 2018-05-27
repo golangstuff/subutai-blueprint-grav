@@ -60,12 +60,25 @@
         name: rewrite
         state: present
 
-    - name: Allow .htaccess
-      lineinfile:
-        dest: /etc/apache2/apache2.conf
-        regexp: "AllowOverride None"
-        line: "AllowOverride All"
-        state: present
+    - name: Copy site conf
+      copy:
+        src: etc/grav.conf
+        dest: /etc/apache2/site-available/grav.conf
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Enable site conf
+      file:
+        state: link
+        src: /etc/nginx/site-available/grav.conf
+        dest: /etc/nginx/site-enabled/grav.conf
+        force: yes
+
+    - name: Disable default site
+      file:
+        state: absent
+        path: /etc/nginx/site-enabled/000-default.conf
 
     - name: Restart apache
       service: 
